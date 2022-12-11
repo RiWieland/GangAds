@@ -3,7 +3,7 @@ package main
 // To Do:
 // - Implement Error handling
 // https://earthly.dev/blog/golang-errors/
-
+// - Naming: naming follow frame number
 // - write program for detecting camera-cuts
 
 import (
@@ -16,45 +16,18 @@ import (
 	"strconv"
 
 	"github.com/disintegration/imaging"
+	"github.com/wielandos/sobelfilter"
 
 	//"reflect"
 	ffmpeg "github.com/u2takey/ffmpeg-go"
 	"gocv.io/x/gocv"
 )
 
-var edge image.Image
+var imgSobel image.Image
 
 func main() {
 
-	f, err := os.Open("./frames_proc/blur_1.jpg")
-	//f, err := os.Open("/Users/richardwieland/Desktop/Projects/AdCoVi/frames_raw/carre_homme.jpg")
-	if err != nil {
-		panic(err)
-	}
-	defer f.Close()
-
-	imgEdge, _, err := image.Decode(f)
-	if err != nil {
-		panic(err)
-	}
-
-	edge = ApplyFilter(imgEdge) //converts "img" to grayscale and runs edge detect. Returns an image.Image with changes.
-
-	e, err := os.Create("./frames_proc/sobel_4.jpg")
-	if err != nil {
-		fmt.Println("exist already")
-	}
-	defer e.Close()
-	opt := jpeg.Options{
-		Quality: 90,
-	}
-	err = jpeg.Encode(e, edge, &opt)
-	if err != nil {
-		// Handle error
-	}
-
-	//////
-	imgPath := "/Users/richardwieland/Desktop/Projects/AdCoVi/frames_raw/out1960.jpeg"
+	imgPath := "./frames_raw/out1961.jpeg"
 	img := gocv.IMRead(imgPath, gocv.IMReadColor)
 	//img := gocv.IMRead(imgPath, gocv.IMReadGrayScale)
 	if img.Empty() {
@@ -63,17 +36,51 @@ func main() {
 	}
 	// Convert BGR to HSV image (dont modify the original)
 	hsvImg := ConvertToHSV(img)
-	SaveFile("./frames_proc/hsv_1.jpg", hsvImg)
+	SaveFile("./frames_proc/hsv_1961.jpg", hsvImg)
 
 	// Convert to grey:
 	greyImg := gocv.NewMat()
 	gocv.CvtColor(img, &greyImg, gocv.ColorBGRToGray)
-	SaveFile("./frames_proc/grey_1.jpg", greyImg)
+	SaveFile("./frames_proc/grey_1961.jpg", greyImg)
 
 	// Blur:
 	BlurProcessed := gocv.NewMat()
-	gocv.GaussianBlur(greyImg, &BlurProcessed, image.Pt(3, 3), 0, 0, gocv.BorderDefault)
-	SaveFile("./frames_proc/blur_1.jpg", BlurProcessed)
+	gocv.GaussianBlur(img, &BlurProcessed, image.Pt(3, 3), 0, 0, gocv.BorderDefault)
+	SaveFile("./frames_proc/blur_1961.jpg", BlurProcessed)
+
+	imgSobel = InputSobel("./frames_proc/blur_1961.jpg")
+	imgSobel = sobelfilter.ApplySobelFilter(imgSobel) //converts "img" to grayscale and runs edge detect. Returns an image.Image with changes.
+	SaveSobel("./frames_proc/sobel_4.jpg", 90)
+
+}
+
+func InputSobel(inputPath string) image.Image {
+	f, err := os.Open(inputPath)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	imgInputSobel, _, err := image.Decode(f)
+	if err != nil {
+		panic(err)
+	}
+	return imgInputSobel
+}
+
+func SaveSobel(targetPath string, quality int) {
+	e, err := os.Create(targetPath)
+	if err != nil {
+		fmt.Println("exist already")
+	}
+	defer e.Close()
+	opt := jpeg.Options{
+		Quality: quality,
+	}
+	err = jpeg.Encode(e, imgSobel, &opt)
+	if err != nil {
+		// Handle error
+	}
 
 }
 
