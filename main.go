@@ -18,6 +18,7 @@ import (
 	"image/jpeg"
 	"io"
 	"log"
+	"math"
 	"os"
 	"strconv"
 
@@ -69,10 +70,11 @@ func main() {
 
 	// rotate
 	RotateImg := gocv.NewMat()
-	gocv.Rotate(BlurProcessed, &RotateImg, gocv.Rotate90CounterClockwise)
+	//gocv.Rotate(BlurProcessed, &RotateImg, gocv.Rotate90CounterClockwise)
+	gocv.Rotate(BlurProcessed, &RotateImg, gocv.Rotate180Clockwise)
 	SaveFile("./frames_proc/rotate_1961.jpg", RotateImg)
 
-	f, err := os.Open("./frames_proc/rotate_1961.jpg")
+	f, err := os.Open("./frames_proc/blur_1961.jpg")
 	if err != nil {
 		panic(err)
 	}
@@ -82,13 +84,146 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	/*
+		// this draws a filled rectagle
+		red_rect := image.Rect(60, 80, 120, 160)
+		myred := color.RGBA{200, 0, 0, 255}
 
+		draw.Draw(img_, red_rect, &image.Uniform{myred}, image.ZP, draw.Src)
+	*/
+	fmt.Printf("type: %T\n", img_)
 	fmt.Println("Model:", img_.ColorModel())
 	fmt.Println("Bounds:", img_.Bounds())
 	fmt.Println("At(1,2):", img_.At(1, 2))
-	img_.Set(1, 2, color.White)
-	fmt.Println("At(1,2):", img_.At(1, 2), "(after Set)")
+	fmt.Println("At(1,2):", img_.At(13, 10), "(after Set)")
 
+	/*
+		out, err := os.Create("./frames_proc/rectagnle_1961.jpg")
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		myRectangle := image.Rect(0, 260, 1100, 120)
+
+		dst := addRectangle(img_, myRectangle)
+
+		err = jpeg.Encode(out, dst, nil) // put quality to 80%
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	*/
+
+	// read image
+	img_rec := gocv.IMRead("./frames_proc/rectagnle_1961.jpg", gocv.IMReadColor)
+	if img_rec.Empty() {
+		fmt.Printf("Failed to read image: %s\n", img_rec)
+		os.Exit(1)
+	}
+
+	origImg := []image.Point{
+		image.Point{128, 165}, // top-left
+		image.Point{215, 275}, // bottom-left
+		image.Point{385, 128}, // bottom-right
+		image.Point{300, 40},  // top-right
+	}
+
+	/*
+		// image coordinages corners of the select business card object
+		origImg := []image.Point{
+			image.Point{0, 120},    // top-left
+			image.Point{0, 260},    // bottom-left
+			image.Point{260, 1100}, // bottom-right
+			image.Point{120, 1100}, // top-right
+		}
+	*/
+
+	// Add Point Slice
+	out_marked, err := os.Create("./frames_proc/point_1961.jpg")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	img_marked := addPointVector(img_, origImg)
+
+	err = jpeg.Encode(out_marked, img_marked, nil) // put quality to 80%
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	// calculate height as a distance between (top-left, bottom-left) and (top-right, bottom-right)
+	heightA := math.Sqrt(math.Pow(float64(origImg[0].X-origImg[1].X), 2) + math.Pow(float64(origImg[0].Y-origImg[1].Y), 2))
+	heightB := math.Sqrt(math.Pow(float64(origImg[3].X-origImg[2].X), 2) + math.Pow(float64(origImg[3].Y-origImg[2].Y), 2))
+	height := int(math.Max(heightA, heightB))
+
+	// caluclate width as a distance between () and ()
+	widthA := math.Sqrt(math.Pow(float64(origImg[0].X-origImg[3].X), 2) + math.Pow(float64(origImg[0].Y-origImg[3].Y), 2))
+	widthB := math.Sqrt(math.Pow(float64(origImg[1].X-origImg[2].X), 2) + math.Pow(float64(origImg[1].Y-origImg[2].Y), 2))
+	width := int(math.Max(widthA, widthB))
+	/*
+		newImg := []image.Point{
+			image.Point{0, 0},
+			image.Point{0, height},
+			image.Point{width, height},
+			image.Point{width, 0},
+		}
+	*/
+	newImg := []image.Point{
+		image.Point{0, 0},
+		image.Point{0, height},
+		image.Point{width, height},
+		image.Point{width, 0},
+	}
+
+	fmt.Println(newImg)
+	src := gocv.NewPointVectorFromPoints(origImg)
+	dest := gocv.NewPointVectorFromPoints(newImg)
+
+	fmt.Println(src)
+	transform := gocv.GetPerspectiveTransform(src, dest)
+	perspective := gocv.NewMat()
+	gocv.WarpPerspective(img_rec, &perspective, transform, image.Point{width, height})
+	//gocv.WarpPerspective(img_rec, &img_rec, transform, image.Point{width, height})
+
+	//outPath := "card_perspective.jpg"
+	if ok := gocv.IMWrite("card_perspective.jpg", perspective); !ok {
+		fmt.Printf("Failed to write image: %s\n")
+		os.Exit(1)
+	}
+
+}
+
+func addRectangle(img draw.Image, rect image.Rectangle) draw.Image {
+	myColor := color.RGBA{255, 0, 255, 255}
+
+	min := rect.Min
+	max := rect.Max
+
+	for i := min.X; i < max.X; i++ {
+		img.Set(i, min.Y, myColor)
+		img.Set(i, max.Y, myColor)
+	}
+
+	for i := min.Y; i <= max.Y; i++ {
+		img.Set(min.X, i, myColor)
+		img.Set(max.X, i, myColor)
+	}
+	return img
+}
+
+func addPointVector(img draw.Image, pointSlice []image.Point) draw.Image {
+
+	for i, _ := range pointSlice {
+
+		point := pointSlice[i]
+		myRectangle := image.Rect(point.X, point.Y, point.X-10, point.Y-10)
+
+		addRectangle(img, myRectangle)
+	}
+	return img
 }
 
 func (m *MyImg) At(x, y int) color.Color {
