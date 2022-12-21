@@ -84,13 +84,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	/*
-		// this draws a filled rectagle
-		red_rect := image.Rect(60, 80, 120, 160)
-		myred := color.RGBA{200, 0, 0, 255}
 
-		draw.Draw(img_, red_rect, &image.Uniform{myred}, image.ZP, draw.Src)
-	*/
 	fmt.Printf("type: %T\n", img_)
 	fmt.Println("Model:", img_.ColorModel())
 	fmt.Println("Bounds:", img_.Bounds())
@@ -122,22 +116,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	origImg := []image.Point{
-		image.Point{128, 165}, // top-left
-		image.Point{215, 275}, // bottom-left
-		image.Point{385, 128}, // bottom-right
-		image.Point{300, 40},  // top-right
-	}
+	// origImg := []image.Point{
+	// 		image.Point{128, 165}, // top-left
+	// 		image.Point{215, 275}, // bottom-left
+	// 		image.Point{385, 128}, // bottom-right
+	// 		image.Point{300, 40},  // top-right
+	// 	}
 
-	/*
-		// image coordinages corners of the select business card object
-		origImg := []image.Point{
-			image.Point{0, 120},    // top-left
-			image.Point{0, 260},    // bottom-left
-			image.Point{260, 1100}, // bottom-right
-			image.Point{120, 1100}, // top-right
-		}
-	*/
+	// image coordinages corners of the select business card object
+	origImg := []image.Point{
+		image.Point{10, 190},   // top-left
+		image.Point{10, 240},   // bottom-left
+		image.Point{1000, 200}, // bottom-right
+		image.Point{1000, 150}, // top-right
+	}
 
 	// Add Point Slice
 	out_marked, err := os.Create("./frames_proc/point_1961.jpg")
@@ -217,7 +209,7 @@ func addRectangle(img draw.Image, rect image.Rectangle) draw.Image {
 func addPointVector(img draw.Image, pointSlice []image.Point) draw.Image {
 
 	for i, _ := range pointSlice {
-
+		fmt.Println(i)
 		point := pointSlice[i]
 		myRectangle := image.Rect(point.X, point.Y, point.X-10, point.Y-10)
 
