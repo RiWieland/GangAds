@@ -37,6 +37,22 @@ type MyImg struct {
 	image.Image
 }
 
+// Target:
+// ->no matter what I want to draw it should use an image and draw the insert points
+
+type Drawing interface {
+	rectangle() string
+}
+
+type CustomImage struct {
+}
+
+func (img CustomImage) rectangle() string {
+
+	return "test"
+
+}
+
 func main() {
 
 	/*
@@ -91,23 +107,21 @@ func main() {
 	fmt.Println("At(1,2):", img_.At(1, 2))
 	fmt.Println("At(1,2):", img_.At(13, 10), "(after Set)")
 
-	/*
-		out, err := os.Create("./frames_proc/rectagnle_1961.jpg")
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
+	out, err := os.Create("./frames_proc/rectagnle_1961.jpg")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 
-		myRectangle := image.Rect(0, 260, 1100, 120)
+	myRectangle := image.Rect(0, 260, 1100, 120)
 
-		dst := addRectangle(img_, myRectangle)
+	dst := addRectangle(img_, myRectangle)
 
-		err = jpeg.Encode(out, dst, nil) // put quality to 80%
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-	*/
+	err = jpeg.Encode(out, dst, nil) // put quality to 80%
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 
 	// read image
 	img_rec := gocv.IMRead("./frames_proc/rectagnle_1961.jpg", gocv.IMReadColor)
