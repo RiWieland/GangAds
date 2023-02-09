@@ -45,7 +45,12 @@ type Drawing interface {
 }
 
 type CustomImage struct {
+	draw.Image
 }
+
+// CustomImage is embedded struct: means that we can add a nested struct
+// and access it more easily
+// => in the present case: we use a struct from the another package
 
 func (img CustomImage) rectangle() string {
 
@@ -96,7 +101,11 @@ func main() {
 	}
 	defer f.Close()
 
-	img_, err := drawableRGBImage(f)
+	img_, _ := drawableRGBImage(f)
+	custImg := CustomImage{
+		img_,
+	}
+
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -115,7 +124,7 @@ func main() {
 
 	myRectangle := image.Rect(0, 260, 1100, 120)
 
-	dst := addRectangle(img_, myRectangle)
+	dst := addRectangle(custImg, myRectangle)
 
 	err = jpeg.Encode(out, dst, nil) // put quality to 80%
 	if err != nil {
@@ -152,7 +161,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	img_marked := addPointVector(img_, origImg)
+	img_marked := addPointVector(custImg, origImg)
 
 	err = jpeg.Encode(out_marked, img_marked, nil) // put quality to 80%
 	if err != nil {
@@ -202,7 +211,7 @@ func main() {
 
 }
 
-func addRectangle(img draw.Image, rect image.Rectangle) draw.Image {
+func addRectangle(img CustomImage, rect image.Rectangle) draw.Image {
 	myColor := color.RGBA{255, 0, 255, 255}
 
 	min := rect.Min
@@ -220,7 +229,7 @@ func addRectangle(img draw.Image, rect image.Rectangle) draw.Image {
 	return img
 }
 
-func addPointVector(img draw.Image, pointSlice []image.Point) draw.Image {
+func addPointVector(img CustomImage, pointSlice []image.Point) draw.Image {
 
 	for i, _ := range pointSlice {
 		fmt.Println(i)
