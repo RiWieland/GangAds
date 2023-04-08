@@ -4,7 +4,7 @@ package main
 // - Implement Error handling
 // https://earthly.dev/blog/golang-errors/
 // - Naming: naming follow frame number
-// - write program for detecting camera-cuts
+// - insert hierachical clustering for detecting camera-cuts
 // - concurrency in exracting frames?
 // - Sobel-implementation
 // - Modul: Camera switcher
@@ -37,20 +37,36 @@ type MyImg struct {
 	image.Image
 }
 
-// Target:
-// ->no matter what I want to draw it should use an image and draw the insert points
+/*
+	type Drawing interface {
+		rectangle() string
+	}
 
-type Drawing interface {
-	rectangle() string
-}
-
-type CustomImage struct {
-}
+// CustomImage is embedded struct: means that we can add a nested struct
+// and access it more easily
+// => in the present case: we use a struct from the another package
 
 func (img CustomImage) rectangle() string {
 
 	return "test"
 
+}
+*/
+type CustomImage struct {
+	draw.Image
+}
+
+type PositionsRectange interface {
+	Position() [2]int
+	Size() int
+}
+
+type Rect struct {
+	height, width int
+}
+
+type Img struct {
+	Size []image.Point
 }
 
 func main() {
@@ -96,7 +112,11 @@ func main() {
 	}
 	defer f.Close()
 
-	img_, err := drawableRGBImage(f)
+	img_, _ := drawableRGBImage(f)
+	custImg := CustomImage{
+		img_,
+	}
+
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -115,7 +135,7 @@ func main() {
 
 	myRectangle := image.Rect(0, 260, 1100, 120)
 
-	dst := addRectangle(img_, myRectangle)
+	dst := addRectangle(custImg, myRectangle)
 
 	err = jpeg.Encode(out, dst, nil) // put quality to 80%
 	if err != nil {
@@ -138,7 +158,9 @@ func main() {
 	// 	}
 
 	// image coordinages corners of the select business card object
-	origImg := []image.Point{
+	var origImg Img
+
+	origImg.Size = []image.Point{
 		image.Point{10, 190},   // top-left
 		image.Point{10, 240},   // bottom-left
 		image.Point{1000, 200}, // bottom-right
@@ -152,7 +174,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	img_marked := addPointVector(img_, origImg)
+	img_marked := addPointVector(custImg, origImg.Size)
 
 	err = jpeg.Encode(out_marked, img_marked, nil) // put quality to 80%
 	if err != nil {
@@ -161,13 +183,13 @@ func main() {
 	}
 
 	// calculate height as a distance between (top-left, bottom-left) and (top-right, bottom-right)
-	heightA := math.Sqrt(math.Pow(float64(origImg[0].X-origImg[1].X), 2) + math.Pow(float64(origImg[0].Y-origImg[1].Y), 2))
-	heightB := math.Sqrt(math.Pow(float64(origImg[3].X-origImg[2].X), 2) + math.Pow(float64(origImg[3].Y-origImg[2].Y), 2))
+	heightA := math.Sqrt(math.Pow(float64(origImg.Size[0].X-origImg.Size[1].X), 2) + math.Pow(float64(origImg.Size[0].Y-origImg.Size[1].Y), 2))
+	heightB := math.Sqrt(math.Pow(float64(origImg.Size[3].X-origImg.Size[2].X), 2) + math.Pow(float64(origImg.Size[3].Y-origImg.Size[2].Y), 2))
 	height := int(math.Max(heightA, heightB))
 
 	// caluclate width as a distance between () and ()
-	widthA := math.Sqrt(math.Pow(float64(origImg[0].X-origImg[3].X), 2) + math.Pow(float64(origImg[0].Y-origImg[3].Y), 2))
-	widthB := math.Sqrt(math.Pow(float64(origImg[1].X-origImg[2].X), 2) + math.Pow(float64(origImg[1].Y-origImg[2].Y), 2))
+	widthA := math.Sqrt(math.Pow(float64(origImg.Size[0].X-origImg.Size[3].X), 2) + math.Pow(float64(origImg.Size[0].Y-origImg.Size[3].Y), 2))
+	widthB := math.Sqrt(math.Pow(float64(origImg.Size[1].X-origImg.Size[2].X), 2) + math.Pow(float64(origImg.Size[1].Y-origImg.Size[2].Y), 2))
 	width := int(math.Max(widthA, widthB))
 	/*
 		newImg := []image.Point{
@@ -177,7 +199,9 @@ func main() {
 			image.Point{width, 0},
 		}
 	*/
-	newImg := []image.Point{
+	var newImg Img
+
+	newImg.Size = []image.Point{
 		image.Point{0, 0},
 		image.Point{0, height},
 		image.Point{width, height},
@@ -185,8 +209,8 @@ func main() {
 	}
 
 	fmt.Println(newImg)
-	src := gocv.NewPointVectorFromPoints(origImg)
-	dest := gocv.NewPointVectorFromPoints(newImg)
+	src := gocv.NewPointVectorFromPoints(origImg.Size)
+	dest := gocv.NewPointVectorFromPoints(newImg.Size)
 
 	fmt.Println(src)
 	transform := gocv.GetPerspectiveTransform(src, dest)
@@ -202,7 +226,27 @@ func main() {
 
 }
 
-func addRectangle(img draw.Image, rect image.Rectangle) draw.Image {
+/*
+func (r Rect) Position() [2]int {
+
+	widthA := math.Sqrt(math.Pow(float64(origImg[0].X-origImg[3].X), 2) + math.Pow(float64(origImg[0].Y-origImg[3].Y), 2))
+	widthB := math.Sqrt(math.Pow(float64(origImg[1].X-origImg[2].X), 2) + math.Pow(float64(origImg[1].Y-origImg[2].Y), 2))
+	width := int(math.Max(widthA, widthB))
+
+	heightA := math.Sqrt(math.Pow(float64(origImg[0].X-origImg[1].X), 2) + math.Pow(float64(origImg[0].Y-origImg[1].Y), 2))
+	heightB := math.Sqrt(math.Pow(float64(origImg[3].X-origImg[2].X), 2) + math.Pow(float64(origImg[3].Y-origImg[2].Y), 2))
+	height := int(math.Max(heightA, heightB))
+	pos := [2]int{width, height}
+	return pos
+
+}
+*/
+func (r Rect) Size() int {
+	return r.height * r.width
+
+}
+
+func addRectangle(img CustomImage, rect image.Rectangle) draw.Image {
 	myColor := color.RGBA{255, 0, 255, 255}
 
 	min := rect.Min
@@ -220,7 +264,7 @@ func addRectangle(img draw.Image, rect image.Rectangle) draw.Image {
 	return img
 }
 
-func addPointVector(img draw.Image, pointSlice []image.Point) draw.Image {
+func addPointVector(img CustomImage, pointSlice []image.Point) draw.Image {
 
 	for i, _ := range pointSlice {
 		fmt.Println(i)
