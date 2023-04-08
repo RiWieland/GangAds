@@ -4,7 +4,7 @@ package main
 // - Implement Error handling
 // https://earthly.dev/blog/golang-errors/
 // - Naming: naming follow frame number
-// - write program for detecting camera-cuts
+// - insert hierachical clustering for detecting camera-cuts
 // - concurrency in exracting frames?
 // - Sobel-implementation
 // - Modul: Camera switcher
@@ -37,16 +37,10 @@ type MyImg struct {
 	image.Image
 }
 
-// Target:
-// ->no matter what I want to draw it should use an image and draw the insert points
-
-type Drawing interface {
-	rectangle() string
-}
-
-type CustomImage struct {
-	draw.Image
-}
+/*
+	type Drawing interface {
+		rectangle() string
+	}
 
 // CustomImage is embedded struct: means that we can add a nested struct
 // and access it more easily
@@ -56,6 +50,10 @@ func (img CustomImage) rectangle() string {
 
 	return "test"
 
+}
+*/
+type CustomImage struct {
+	draw.Image
 }
 
 func main() {
