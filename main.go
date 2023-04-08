@@ -56,6 +56,19 @@ type CustomImage struct {
 	draw.Image
 }
 
+type PositionsRectange interface {
+	Position() [2]int
+	Size() int
+}
+
+type Rect struct {
+	height, width int
+}
+
+type Img struct {
+	Size []image.Point
+}
+
 func main() {
 
 	/*
@@ -145,7 +158,9 @@ func main() {
 	// 	}
 
 	// image coordinages corners of the select business card object
-	origImg := []image.Point{
+	var origImg Img
+
+	origImg.Size = []image.Point{
 		image.Point{10, 190},   // top-left
 		image.Point{10, 240},   // bottom-left
 		image.Point{1000, 200}, // bottom-right
@@ -184,7 +199,9 @@ func main() {
 			image.Point{width, 0},
 		}
 	*/
-	newImg := []image.Point{
+	var newImg Img
+
+	newImg.Size = []image.Point{
 		image.Point{0, 0},
 		image.Point{0, height},
 		image.Point{width, height},
@@ -192,8 +209,8 @@ func main() {
 	}
 
 	fmt.Println(newImg)
-	src := gocv.NewPointVectorFromPoints(origImg)
-	dest := gocv.NewPointVectorFromPoints(newImg)
+	src := gocv.NewPointVectorFromPoints(origImg.Size)
+	dest := gocv.NewPointVectorFromPoints(newImg.Size)
 
 	fmt.Println(src)
 	transform := gocv.GetPerspectiveTransform(src, dest)
@@ -206,6 +223,25 @@ func main() {
 		fmt.Printf("Failed to write image: %s\n")
 		os.Exit(1)
 	}
+
+}
+
+func (r Rect) Position() [2]int {
+
+	widthA := math.Sqrt(math.Pow(float64(origImg[0].X-origImg[3].X), 2) + math.Pow(float64(origImg[0].Y-origImg[3].Y), 2))
+	widthB := math.Sqrt(math.Pow(float64(origImg[1].X-origImg[2].X), 2) + math.Pow(float64(origImg[1].Y-origImg[2].Y), 2))
+	width := int(math.Max(widthA, widthB))
+
+	heightA := math.Sqrt(math.Pow(float64(origImg[0].X-origImg[1].X), 2) + math.Pow(float64(origImg[0].Y-origImg[1].Y), 2))
+	heightB := math.Sqrt(math.Pow(float64(origImg[3].X-origImg[2].X), 2) + math.Pow(float64(origImg[3].Y-origImg[2].Y), 2))
+	height := int(math.Max(heightA, heightB))
+	pos := [2]int{width, height}
+	return pos
+
+}
+
+func (r Rect) Size() int {
+	return r.height * r.width
 
 }
 
