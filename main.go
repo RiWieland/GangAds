@@ -174,7 +174,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	img_marked := addPointVector(custImg, origImg)
+	img_marked := addPointVector(custImg, origImg.Size)
 
 	err = jpeg.Encode(out_marked, img_marked, nil) // put quality to 80%
 	if err != nil {
@@ -183,13 +183,13 @@ func main() {
 	}
 
 	// calculate height as a distance between (top-left, bottom-left) and (top-right, bottom-right)
-	heightA := math.Sqrt(math.Pow(float64(origImg[0].X-origImg[1].X), 2) + math.Pow(float64(origImg[0].Y-origImg[1].Y), 2))
-	heightB := math.Sqrt(math.Pow(float64(origImg[3].X-origImg[2].X), 2) + math.Pow(float64(origImg[3].Y-origImg[2].Y), 2))
+	heightA := math.Sqrt(math.Pow(float64(origImg.Size[0].X-origImg.Size[1].X), 2) + math.Pow(float64(origImg.Size[0].Y-origImg.Size[1].Y), 2))
+	heightB := math.Sqrt(math.Pow(float64(origImg.Size[3].X-origImg.Size[2].X), 2) + math.Pow(float64(origImg.Size[3].Y-origImg.Size[2].Y), 2))
 	height := int(math.Max(heightA, heightB))
 
 	// caluclate width as a distance between () and ()
-	widthA := math.Sqrt(math.Pow(float64(origImg[0].X-origImg[3].X), 2) + math.Pow(float64(origImg[0].Y-origImg[3].Y), 2))
-	widthB := math.Sqrt(math.Pow(float64(origImg[1].X-origImg[2].X), 2) + math.Pow(float64(origImg[1].Y-origImg[2].Y), 2))
+	widthA := math.Sqrt(math.Pow(float64(origImg.Size[0].X-origImg.Size[3].X), 2) + math.Pow(float64(origImg.Size[0].Y-origImg.Size[3].Y), 2))
+	widthB := math.Sqrt(math.Pow(float64(origImg.Size[1].X-origImg.Size[2].X), 2) + math.Pow(float64(origImg.Size[1].Y-origImg.Size[2].Y), 2))
 	width := int(math.Max(widthA, widthB))
 	/*
 		newImg := []image.Point{
@@ -226,6 +226,7 @@ func main() {
 
 }
 
+/*
 func (r Rect) Position() [2]int {
 
 	widthA := math.Sqrt(math.Pow(float64(origImg[0].X-origImg[3].X), 2) + math.Pow(float64(origImg[0].Y-origImg[3].Y), 2))
@@ -239,7 +240,7 @@ func (r Rect) Position() [2]int {
 	return pos
 
 }
-
+*/
 func (r Rect) Size() int {
 	return r.height * r.width
 
