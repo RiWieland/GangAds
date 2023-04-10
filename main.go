@@ -66,7 +66,19 @@ type Rect struct {
 }
 
 type Img struct {
-	Size []image.Point
+	size []image.Point
+}
+
+// Pixel struct example
+type Pixel struct {
+	R int
+	G int
+	B int
+	A int
+}
+
+type positions interface {
+	position() []int
 }
 
 func main() {
@@ -160,7 +172,7 @@ func main() {
 	// image coordinages corners of the select business card object
 	var origImg Img
 
-	origImg.Size = []image.Point{
+	origImg.size = []image.Point{
 		image.Point{10, 190},   // top-left
 		image.Point{10, 240},   // bottom-left
 		image.Point{1000, 200}, // bottom-right
@@ -174,7 +186,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	img_marked := addPointVector(custImg, origImg.Size)
+	img_marked := addPointVector(custImg, origImg.size)
 
 	err = jpeg.Encode(out_marked, img_marked, nil) // put quality to 80%
 	if err != nil {
@@ -183,13 +195,13 @@ func main() {
 	}
 
 	// calculate height as a distance between (top-left, bottom-left) and (top-right, bottom-right)
-	heightA := math.Sqrt(math.Pow(float64(origImg.Size[0].X-origImg.Size[1].X), 2) + math.Pow(float64(origImg.Size[0].Y-origImg.Size[1].Y), 2))
-	heightB := math.Sqrt(math.Pow(float64(origImg.Size[3].X-origImg.Size[2].X), 2) + math.Pow(float64(origImg.Size[3].Y-origImg.Size[2].Y), 2))
+	heightA := math.Sqrt(math.Pow(float64(origImg.size[0].X-origImg.size[1].X), 2) + math.Pow(float64(origImg.size[0].Y-origImg.size[1].Y), 2))
+	heightB := math.Sqrt(math.Pow(float64(origImg.size[3].X-origImg.size[2].X), 2) + math.Pow(float64(origImg.size[3].Y-origImg.size[2].Y), 2))
 	height := int(math.Max(heightA, heightB))
 
 	// caluclate width as a distance between () and ()
-	widthA := math.Sqrt(math.Pow(float64(origImg.Size[0].X-origImg.Size[3].X), 2) + math.Pow(float64(origImg.Size[0].Y-origImg.Size[3].Y), 2))
-	widthB := math.Sqrt(math.Pow(float64(origImg.Size[1].X-origImg.Size[2].X), 2) + math.Pow(float64(origImg.Size[1].Y-origImg.Size[2].Y), 2))
+	widthA := math.Sqrt(math.Pow(float64(origImg.size[0].X-origImg.size[3].X), 2) + math.Pow(float64(origImg.size[0].Y-origImg.size[3].Y), 2))
+	widthB := math.Sqrt(math.Pow(float64(origImg.size[1].X-origImg.size[2].X), 2) + math.Pow(float64(origImg.size[1].Y-origImg.size[2].Y), 2))
 	width := int(math.Max(widthA, widthB))
 	/*
 		newImg := []image.Point{
@@ -201,7 +213,7 @@ func main() {
 	*/
 	var newImg Img
 
-	newImg.Size = []image.Point{
+	newImg.size = []image.Point{
 		image.Point{0, 0},
 		image.Point{0, height},
 		image.Point{width, height},
@@ -209,8 +221,8 @@ func main() {
 	}
 
 	fmt.Println(newImg)
-	src := gocv.NewPointVectorFromPoints(origImg.Size)
-	dest := gocv.NewPointVectorFromPoints(newImg.Size)
+	src := gocv.NewPointVectorFromPoints(origImg.size)
+	dest := gocv.NewPointVectorFromPoints(newImg.size)
 
 	fmt.Println(src)
 	transform := gocv.GetPerspectiveTransform(src, dest)
@@ -226,21 +238,20 @@ func main() {
 
 }
 
-/*
-func (r Rect) Position() [2]int {
+func (img Img) position() [2]int {
 
-	widthA := math.Sqrt(math.Pow(float64(origImg[0].X-origImg[3].X), 2) + math.Pow(float64(origImg[0].Y-origImg[3].Y), 2))
-	widthB := math.Sqrt(math.Pow(float64(origImg[1].X-origImg[2].X), 2) + math.Pow(float64(origImg[1].Y-origImg[2].Y), 2))
+	widthA := math.Sqrt(math.Pow(float64(img.size[0].X-img.size[3].X), 2) + math.Pow(float64(img.size[0].Y-img.size[3].Y), 2))
+	widthB := math.Sqrt(math.Pow(float64(img.size[1].X-img.size[2].X), 2) + math.Pow(float64(img.size[1].Y-img.size[2].Y), 2))
 	width := int(math.Max(widthA, widthB))
 
-	heightA := math.Sqrt(math.Pow(float64(origImg[0].X-origImg[1].X), 2) + math.Pow(float64(origImg[0].Y-origImg[1].Y), 2))
-	heightB := math.Sqrt(math.Pow(float64(origImg[3].X-origImg[2].X), 2) + math.Pow(float64(origImg[3].Y-origImg[2].Y), 2))
+	heightA := math.Sqrt(math.Pow(float64(img.size[0].X-img.size[1].X), 2) + math.Pow(float64(img.size[0].Y-img.size[1].Y), 2))
+	heightB := math.Sqrt(math.Pow(float64(img.size[3].X-img.size[2].X), 2) + math.Pow(float64(img.size[3].Y-img.size[2].Y), 2))
 	height := int(math.Max(heightA, heightB))
 	pos := [2]int{width, height}
 	return pos
 
 }
-*/
+
 func (r Rect) Size() int {
 	return r.height * r.width
 
@@ -326,14 +337,6 @@ func getPixels(file io.Reader) ([][]Pixel, error) {
 // img.At(x, y).RGBA() returns four uint32 values; we want a Pixel
 func rgbaToPixel(r uint32, g uint32, b uint32, a uint32) Pixel {
 	return Pixel{int(r / 257), int(g / 257), int(b / 257), int(a / 257)}
-}
-
-// Pixel struct example
-type Pixel struct {
-	R int
-	G int
-	B int
-	A int
 }
 
 func InputSobel(inputPath string) image.Image {
