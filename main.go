@@ -252,6 +252,13 @@ func (img Img) position() [2]int {
 
 }
 
+// how do I implement this function if every method of the interface has different return type?
+func extract(p positions) []int {
+	fmt.Println(p)
+	fmt.Println(p.position())
+	return p.position()
+}
+
 func (r Rect) Size() int {
 	return r.height * r.width
 
