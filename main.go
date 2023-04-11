@@ -56,11 +56,12 @@ type CustomImage struct {
 	draw.Image
 }
 
-type PositionsRectange interface {
-	Position() [2]int
-	Size() int
-}
-
+/*
+	type PositionsRectange interface {
+		Position() [2]int
+		Size() int
+	}
+*/
 type Rect struct {
 	height, width int
 }
@@ -78,7 +79,7 @@ type Pixel struct {
 }
 
 type positions interface {
-	position() []int
+	position() [2]int
 }
 
 func main() {
@@ -193,16 +194,17 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+	/*
+		// calculate height as a distance between (top-left, bottom-left) and (top-right, bottom-right)
+		heightA := math.Sqrt(math.Pow(float64(origImg.size[0].X-origImg.size[1].X), 2) + math.Pow(float64(origImg.size[0].Y-origImg.size[1].Y), 2))
+		heightB := math.Sqrt(math.Pow(float64(origImg.size[3].X-origImg.size[2].X), 2) + math.Pow(float64(origImg.size[3].Y-origImg.size[2].Y), 2))
+		height := int(math.Max(heightA, heightB))
 
-	// calculate height as a distance between (top-left, bottom-left) and (top-right, bottom-right)
-	heightA := math.Sqrt(math.Pow(float64(origImg.size[0].X-origImg.size[1].X), 2) + math.Pow(float64(origImg.size[0].Y-origImg.size[1].Y), 2))
-	heightB := math.Sqrt(math.Pow(float64(origImg.size[3].X-origImg.size[2].X), 2) + math.Pow(float64(origImg.size[3].Y-origImg.size[2].Y), 2))
-	height := int(math.Max(heightA, heightB))
-
-	// caluclate width as a distance between () and ()
-	widthA := math.Sqrt(math.Pow(float64(origImg.size[0].X-origImg.size[3].X), 2) + math.Pow(float64(origImg.size[0].Y-origImg.size[3].Y), 2))
-	widthB := math.Sqrt(math.Pow(float64(origImg.size[1].X-origImg.size[2].X), 2) + math.Pow(float64(origImg.size[1].Y-origImg.size[2].Y), 2))
-	width := int(math.Max(widthA, widthB))
+		// caluclate width as a distance between () and ()
+		widthA := math.Sqrt(math.Pow(float64(origImg.size[0].X-origImg.size[3].X), 2) + math.Pow(float64(origImg.size[0].Y-origImg.size[3].Y), 2))
+		widthB := math.Sqrt(math.Pow(float64(origImg.size[1].X-origImg.size[2].X), 2) + math.Pow(float64(origImg.size[1].Y-origImg.size[2].Y), 2))
+		width := int(math.Max(widthA, widthB))
+	*/
 	/*
 		newImg := []image.Point{
 			image.Point{0, 0},
@@ -211,6 +213,9 @@ func main() {
 			image.Point{width, 0},
 		}
 	*/
+	position_extract := extract(origImg)
+	height := position_extract[0]
+	width := position_extract[1]
 	var newImg Img
 
 	newImg.size = []image.Point{
@@ -253,7 +258,7 @@ func (img Img) position() [2]int {
 }
 
 // how do I implement this function if every method of the interface has different return type?
-func extract(p positions) []int {
+func extract(p positions) [2]int {
 	fmt.Println(p)
 	fmt.Println(p.position())
 	return p.position()
